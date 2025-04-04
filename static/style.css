@@ -1,0 +1,785 @@
+/* Define color variables for easy customization / Định nghĩa các biến màu để dễ tùy chỉnh */
+:root {
+    --primary-color: #007BFF;
+    --primary-dark: #0056b3;
+    --secondary-color: #28a745;
+    --secondary-dark: #218838;
+    --background-light: #eef2f3;
+    --text-color: #2c3e50;
+    --table-header: #3498db;
+    --warning-color: #d35400;
+    --shadow-light: rgba(0, 0, 0, 0.1);
+    --success-color: #27AE60;
+    --error-color: #C0392B;
+}
+
+/* General styles / Thiết lập chung */
+body {
+    font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-light);
+    margin: 0;
+    padding: 0;
+    color: var(--text-color);
+    line-height: 1.6;
+    display: flex;
+}
+
+/* Sidebar / Thanh bên */
+.sidebar {
+    width: 250px;
+    background: var(--text-color);
+    color: white;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding-top: 70px;
+    box-shadow: 2px 0 5px var(--shadow-light);
+}
+
+.sidebar h3 {
+    margin: 20px;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    padding: 15px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.sidebar ul li:hover {
+    background: var(--primary-dark);
+}
+
+.sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Header styles / Kiểu dáng tiêu đề */
+header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    padding: 15px 20px;
+    position: fixed;
+    top: 0;
+    width: 100%; /* Đặt width 100% để header chiếm toàn bộ chiều rộng */
+    box-shadow: 0 4px 6px var(--shadow-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 500;
+    margin-left: 30px;
+}
+
+header a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+    margin-right: 40px;
+}
+
+header a:hover {
+    color: var(--warning-color);
+}
+
+/* Main content / Nội dung chính */
+main {
+    margin-left: 250px;
+    margin-top: 70px;
+    padding: 20px;
+    width: calc(100% - 250px);
+}
+
+/* Headings / Tiêu đề */
+h1 {
+    color: var(--text-color);
+    font-size: 32px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h2 {
+    color: var(--text-color);
+    font-size: 22px;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+/* Dashboard Overview / Tổng quan */
+.dashboard-overview {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px var(--shadow-light);
+    flex: 1;
+    text-align: center;
+}
+
+.card h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: var(--text-color);
+}
+
+.card p {
+    margin: 0;
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+/* Class container / Container danh sách lớp */
+.class-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.class-box {
+    display: block;
+    width: 180px;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 18px;
+    text-align: center;
+    font-weight: bold;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 4px 6px var(--shadow-light);
+}
+
+.class-box:hover {
+    background: linear-gradient(135deg, var(--primary-dark), #004494);
+    transform: scale(1.05);
+}
+
+/* Collect and train containers / Container thu thập và huấn luyện */
+.collect-container, .train-container {
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px var(--shadow-light);
+    width: 90%;
+    max-width: 700px;
+    text-align: center;
+}
+
+.collect-container form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.collect-container select, 
+.collect-container input {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    width: 200px;
+    transition: border-color 0.3s;
+}
+
+.collect-container select:focus, 
+.collect-container input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Tables / Bảng */
+table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 4px 8px var(--shadow-light);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: var(--table-header);
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.status.attended {
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.status.off {
+    color: var(--error-color);
+    font-weight: bold;
+}
+
+/* Delete button / Nút xóa */
+.delete-btn {
+    background: none;
+    border: none;
+    color: var(--warning-color);
+    font-size: 16px;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.delete-btn:hover {
+    color: var(--error-color);
+}
+
+/* Video wrapper / Wrapper cho video */
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 20px auto;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px var(--shadow-light);
+}
+
+#video_feed {
+    width: 100%;
+    border: 3px solid var(--text-color);
+    border-radius: 10px;
+}
+
+.video-wrapper::before {
+    content: "Attendance Video / Video điểm danh";
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(52, 152, 219, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+/* Buttons / Nút */
+button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--secondary-color), var(--secondary-dark));
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 4px 6px var(--shadow-light);
+    align-items: center;
+    gap: 8px;
+}
+
+button:hover {
+    background: linear-gradient(135deg, var(--secondary-dark), #1e7e34);
+    transform: scale(1.05);
+}
+
+/* Status / Trạng thái */
+#collect_status, #train_status {
+    margin-top: 10px;
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+#train_status.not-trained {
+    color: var(--error-color);
+}
+
+#train_status.trained {
+    color: var(--success-color);
+}
+
+/* Loading animation / Hiệu ứng tải */
+.loading {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--primary-color);
+    border-top: 5px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 3000;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Modal for delete confirmation / Modal xác nhận xóa */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 15px var(--shadow-light);
+    width: 90%;
+    max-width: 400px;
+}
+
+.modal-content p {
+    margin: 0 0 20px;
+    font-size: 16px;
+    color: var(--text-color);
+}
+
+.modal-content button {
+    margin: 0 10px;
+}
+
+#modal-yes {
+    background: linear-gradient(135deg, var(--error-color), #a93226);
+}
+
+#modal-yes:hover {
+    background: linear-gradient(135deg, #a93226, var(--error-color));
+}
+
+#modal-no {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+}
+
+#modal-no:hover {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+}
+
+/* Responsive design / Thiết kế đáp ứng */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+    }
+    header, main {
+        width: calc(100% - 200px);
+        margin-left: 200px;
+    }
+    .video-wrapper, .collect-container form {
+        width: 90%;
+    }
+    table, th, td {
+        font-size: 14px;
+        padding: 8px;
+    }
+    .collect-container select, 
+    .collect-container input {
+        width: 100%;
+        max-width: 300px;
+    }
+    button {
+        padding: 10px 18px;
+        font-size: 14px;
+    }
+    .dashboard-overview {
+        flex-direction: column;
+    }
+}
+
+/* CSS cho footer */
+.footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 5px 0;
+    position: relative;
+    width: 100%;
+    bottom: 0;
+}
+
+.footer a {
+    color: #f8f8f8;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+.footer a:hover {
+    text-decoration: underline;
+}
+
+/* Đảm bảo nội dung trang không bị che */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+    padding-bottom: 50px; /* Để footer không đè lên nội dung */
+}
+
+/* Logo styles */
+.logo {
+    width: 100px;
+    height: 100px;
+    margin: 20px auto;
+    display: block;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    object-fit: cover;
+    transition: transform 0.3s, border-color 0.3s;
+    margin-top: -40px;
+}
+
+.logo:hover {
+    transform: scale(1.1); 
+    border-color: var(--secondary-color); 
+}
+
+body.dark-mode .logo {
+    border-color: var(--text-color-dark);
+}
+
+/* NEW CSS FOR RESPONSIVE */
+
+/* Sidebar responsive */
+.sidebar {
+    left: -250px; /* Ẩn sidebar trên điện thoại */
+    transition: left 0.3s;
+}
+
+.sidebar.active {
+    left: 0; /* Hiển thị sidebar khi active */
+}
+
+/* Hamburger menu for mobile */
+.hamburger {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    font-size: 1.5rem;
+    color: var(--text-color);
+    cursor: pointer;
+    z-index: 1001;
+    display: none; /* Ẩn trên máy tính */
+}
+
+/* Responsive adjustments */
+@media (min-width: 769px) {
+    .sidebar {
+        left: 0; /* Hiển thị sidebar trên máy tính */
+    }
+
+    .hamburger {
+        display: none;
+    }
+
+    header {
+        margin-top: 0;
+        width: calc(100% - 250px); /* Chỉ áp dụng trên máy tính */
+        left: 250px; /* Chỉ áp dụng trên máy tính */
+    }
+    header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 500;
+    }
+
+    header a {
+        margin-right: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+        left: -200px; /* Ẩn sidebar trên điện thoại */
+    }
+
+    header, main {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .hamburger {
+        display: block; /* Hiển thị hamburger menu trên điện thoại */
+    }
+
+    header a {
+        margin-right: 0;
+
+    }
+
+    .dashboard-overview {
+        gap: 15px;
+    }
+
+    .card {
+        padding: 10px;
+    }
+
+    .card h3 {
+        font-size: 16px;
+    }
+
+    .card p {
+        font-size: 20px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    table, th, td {
+        font-size: 12px;
+        padding: 6px;
+    }
+
+    .delete-btn {
+        font-size: 14px;
+    }
+
+    button {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .modal-content {
+        padding: 15px;
+        max-width: 300px;
+    }
+
+    .modal-content p {
+        font-size: 14px;
+    }
+
+    .modal-content button {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+}
+
+/* Responsive table */
+@media (max-width: 576px) {
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .video-wrapper {
+        max-width: 100%;
+    }
+
+    #video_feed {
+        max-width: 100%;
+    }
+
+    .video-wrapper::before {
+        font-size: 12px;
+        padding: 3px 6px;
+    }
+}
+/* NEW CSS FOR RESPONSIVE INDEX.HTML */
+
+/* Theme toggle button */
+.theme-toggle {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    z-index: 1001;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0 4px 6px var(--shadow-light);
+}
+
+.theme-toggle:hover {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+    transform: scale(1.05);
+}
+
+/* Toast notification */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--success-color);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: none;
+    z-index: 1000;
+    font-size: 16px;
+}
+
+.toast.show {
+    display: block;
+    animation: fadeInOut 3s;
+}
+
+.toast.error {
+    background-color: var(--error-color);
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Responsive adjustments for index.html */
+@media (max-width: 768px) {
+    .theme-toggle {
+        top: 70px;
+        right: 15px;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .toast {
+        bottom: 15px;
+        right: 15px;
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+
+    .class-box {
+        width: 140px;
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    .collect-container, .train-container {
+        width: 100%;
+        padding: 15px;
+    }
+
+    .collect-container h2, .train-container h2 {
+        font-size: 18px;
+    }
+
+    .collect-container select, 
+    .collect-container input {
+        width: 100%;
+        max-width: 250px;
+        font-size: 14px;
+        padding: 8px;
+    }
+}
+/* NEW CSS FOR DARK MODE */
+
+/* Dark mode styles */
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #f0f0f0;
+}
+
+body.dark-mode header {
+    background: linear-gradient(135deg, #1e3a8a, #1e40af);
+}
+
+body.dark-mode .sidebar {
+    background: #121212;
+}
+
+body.dark-mode .sidebar ul li:hover {
+    background: #1e40af;
+}
+
+body.dark-mode main {
+    background-color: #1a1a1a;
+}
+
+body.dark-mode h1,
+body.dark-mode h2 {
+    color: #f0f0f0;
+}
+
+body.dark-mode .dashboard-overview .card,
+body.dark-mode .collect-container,
+body.dark-mode .train-container,
+body.dark-mode table {
+    background: #2a2a2a;
+    color: #f0f0f0;
+}
+
+body.dark-mode .card p {
+    color: #60a5fa;
+}
+
+body.dark-mode tr:nth-child(even) {
+    background: #333333;
+}
+
+body.dark-mode .class-box {
+    background: linear-gradient(135deg, #1e3a8a, #1e40af);
+}
+
+body.dark-mode .class-box:hover {
+    background: linear-gradient(135deg, #1e40af, #1e3a8a);
+}
+
+body.dark-mode .footer {
+    background-color: #121212;
+}
+
+body.dark-mode .footer a {
+    color: #60a5fa;
+}

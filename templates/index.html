@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <!-- Hamburger menu for mobile -->
+    <div class="hamburger" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Sidebar / Thanh bên -->
+    <div class="sidebar">
+        <img src="{{ url_for('static', filename='logoFA.jpg') }}" alt="Logo" class="logo">
+        <h3>Attendance System</h3>
+        <ul>
+            <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="/class/SE06201"><i class="fas fa-chalkboard-teacher"></i> SE06201</a></li>
+            <li><a href="/class/SE06202"><i class="fas fa-chalkboard-teacher"></i> SE06202</a></li>
+            <li><a href="/class/SE06203"><i class="fas fa-chalkboard-teacher"></i> SE06203</a></li>
+        </ul>
+    </div>
+
+    <header>
+        <h1>Attendance System</h1>
+    </header>
+
+    <!-- Theme toggle button / Nút chuyển đổi giao diện -->
+    <button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-moon"></i> Dark Mode</button>
+
+    <main>
+        <h1>BTEC FPT Student Attendance System</h1>
+
+        <!-- Class List / Danh sách lớp -->
+        <div class="class-container">
+            <a href="/class/SE06201" class="class-box">SE06201</a>
+            <a href="/class/SE06202" class="class-box">SE06202</a>
+            <a href="/class/SE06203" class="class-box">SE06203</a>
+        </div>
+
+        <!-- Collect Facial Data / Thu thập dữ liệu khuôn mặt -->
+        <div class="collect-container">
+            <h2>Collect Facial Data</h2>
+            <form id="collect_form">
+                <select name="class" required>
+                    <option value="SE06201">SE06201</option>
+                    <option value="SE06202">SE06202</option>
+                    <option value="SE06203">SE06203</option>
+                </select>
+                <input type="text" name="id" placeholder="Student ID" required>
+                <input type="text" name="name" placeholder="Student Name" required>
+                <button type="submit"><i class="fas fa-camera"></i> Start Collecting</button>
+            </form>
+            <div id="collect_status">Status: Not started yet</div>
+            <!-- Video stream for collecting faces / Video stream để thu thập khuôn mặt -->
+            <div class="video-wrapper" id="collect_video_wrapper" style="display: none;">
+                <img id="collect_video_feed" alt="Collecting Video">
+            </div>
+        </div>
+
+        <!-- Model Training / Huấn luyện mô hình -->
+        <div class="train-container">
+            <h2>Model Training</h2>
+            <button id="train_button"><i class="fas fa-cogs"></i> Train Model</button>
+            <div id="train_status" class="not-trained">Status: Not trained</div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2025 Attendance System. All rights reserved.</p>
+        <p>
+            <a href="#">Privacy Policy</a> |
+            <a href="#">Terms of Service</a> |
+            <a href="#">Contact Us</a>
+        </p>
+    </footer>
+
+    <!-- Loading Animation / Hiệu ứng tải -->
+    <div class="loading" id="loading"></div>
+
+    <!-- Toast Notification / Thông báo dạng pop-up -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+
+        // Theme toggle / Chuyển đổi giao diện
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const themeButton = document.querySelector('.theme-toggle');
+            if (document.body.classList.contains('dark-mode')) {
+                themeButton.innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeButton.innerHTML = '<i class="fas fa-moon"></i> Dark Mode';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Load theme from localStorage / Tải giao diện từ localStorage
+        window.onload = function() {
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.querySelector('.theme-toggle').innerHTML = '<i class="fas fa-sun"></i> Light Mode';
+            }
+        };
+
+        // Show toast notification / Hiển thị thông báo
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast show';
+            if (type === 'error') {
+                toast.classList.add('error');
+            }
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+
+        // Show loading animation / Hiển thị hiệu ứng tải
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Collect facial data / Thu thập dữ liệu khuôn mặt
+        document.getElementById('collect_form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const className = this.querySelector('select[name="class"]').value;
+            const studentId = this.querySelector('input[name="id"]').value;
+            const studentName = this.querySelector('input[name="name"]').value;
+            const collectStatus = document.getElementById('collect_status');
+            const videoWrapper = document.getElementById('collect_video_wrapper');
+            const videoFeed = document.getElementById('collect_video_feed');
+
+            showLoading();
+            collectStatus.textContent = 'Status: Collecting...';
+            videoWrapper.style.display = 'block';
+
+            // Kiểm tra webcam trước khi bắt đầu stream
+            fetch(`/collect_faces/${className}/${studentId}/${studentName}`)
+                .then(response => {
+                    if (response.headers.get('content-type').includes('application/json')) {
+                        return response.json().then(data => {
+                            throw new Error(data.error);
+                        });
+                    }
+                    return response;
+                })
+                .catch(error => {
+                    showToast(error.message, 'error');
+                    collectStatus.textContent = 'Status: Not started yet';
+                    videoWrapper.style.display = 'none';
+                    hideLoading();
+                    return;
+                });
+
+            // Bắt đầu stream video
+            videoFeed.src = `/collect_faces/${className}/${studentId}/${studentName}`;
+
+            // Dừng stream sau 30 giây
+            setTimeout(() => {
+                videoFeed.src = '';
+                videoWrapper.style.display = 'none';
+                collectStatus.textContent = 'Status: Not started yet';
+                showToast('Data collected successfully!');
+                hideLoading();
+            }, 30000);
+        });
+
+        // Train model / Huấn luyện mô hình
+        document.getElementById('train_button').addEventListener('click', function() {
+            showLoading();
+            const trainStatus = document.getElementById('train_status');
+            trainStatus.textContent = 'Status: Training...';
+
+            fetch('/train_model')
+                .then(response => response.json())
+                .then(data => {
+                    trainStatus.textContent = `Status: ${data.message}`;
+                    if (data.message.includes("complete")) {
+                        trainStatus.classList.remove('not-trained');
+                        trainStatus.classList.add('trained');
+                        showToast('Model trained successfully!');
+                    } else {
+                        showToast('Error training model!', 'error');
+                    }
+                    hideLoading();
+                })
+                .catch(error => {
+                    trainStatus.textContent = 'Status: Error';
+                    showToast('Error training model!', 'error');
+                    hideLoading();
+                });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Class {{ class_name }}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Hamburger menu for mobile -->
+    <div class="hamburger" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <img src="{{ url_for('static', filename='logoFA.jpg') }}" alt="Logo" class="logo">
+        <h3>Attendance System</h3>
+        <ul>
+            <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="/class/{{ class_name }}"><i class="fas fa-chalkboard-teacher"></i> Class {{ class_name }}</a></li>
+        </ul>
+    </div>
+
+    <!-- Header -->
+    <header>
+        <h1>Class {{ class_name }}</h1>
+        <a href="/">Back to Home</a>
+    </header>
+
+    <!-- Main content -->
+    <main>
+        <!-- Dashboard Overview -->
+        <div class="dashboard-overview">
+            <div class="card">
+                <h3>Total Students</h3>
+                <p id="total-students">{{ students|length }}</p>
+            </div>
+            <div class="card">
+                <h3>Attended Today</h3>
+                <p id="attended-today">0</p>
+            </div>
+        </div>
+
+        <!-- Student List -->
+        <h2>Student List</h2>
+        <table id="student_table">
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Student ID</th>
+                    <th>Student Name</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ student.student_id }}</td>
+                    <td>{{ student.student_name }}</td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteStudent('{{ class_name }}', '{{ student.student_id }}', '{{ student.student_name }}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Attendance Video -->
+        <h2>Attendance</h2>
+        <div class="video-wrapper">
+            <img id="video_feed" src="{{ url_for('video_feed', class_name=class_name) }}" alt="Attendance Video">
+        </div>
+
+        <!-- Attendance Status -->
+        <h2>Attendance Status</h2>
+        <table id="attendance_table">
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>Student ID</th>
+                    <th>Student Name</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button onclick="exportExcel()"><i class="fas fa-file-export"></i> Export to Excel</button>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2025 Attendance System. All rights reserved.</p>
+        <p>
+            <a href="#">Privacy Policy</a> |
+            <a href="#">Terms of Service</a> |
+            <a href="#">Contact Us</a>
+        </p>
+    </footer>
+
+    <!-- Loading Animation -->
+    <div class="loading" id="loading"></div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content">
+            <p>Are you sure you want to delete <span id="modal-student-name"></span>?</p>
+            <button id="modal-yes">Yes</button>
+            <button id="modal-no">No</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+        }
+
+        // Show loading animation
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Update attendance status
+        function updateAttendance() {
+            showLoading();
+            fetch('/attendance_status?class={{ class_name }}')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.querySelector('#attendance_table tbody');
+                    tbody.innerHTML = '';
+                    let attendedCount = 0;
+                    data.forEach((student, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${student.student_id}</td>
+                            <td>${student.student_name}</td>
+                            <td class="status ${student.status.toLowerCase()}">${student.status === 'Attended' ? '<i class="fas fa-check"></i> Attended' : '<i class="fas fa-times"></i> Off'}</td>
+                            <td>${student.timestamp}</td>
+                        `;
+                        tbody.appendChild(row);
+                        if (student.status === 'Attended') attendedCount++;
+                    });
+                    document.getElementById('attended-today').textContent = attendedCount;
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Error updating attendance:', error);
+                    hideLoading();
+                });
+        }
+
+        // Delete student
+        function deleteStudent(class_name, student_id, student_name) {
+            const modal = document.getElementById('delete-modal');
+            const studentNameSpan = document.getElementById('modal-student-name');
+            studentNameSpan.textContent = student_name;
+            modal.style.display = 'flex';
+
+            document.getElementById('modal-yes').onclick = function() {
+                showLoading();
+                const formData = new FormData();
+                formData.append('class', class_name);
+                formData.append('student_id', student_id);
+                formData.append('student_name', student_name);
+
+                fetch('/delete_student', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.message.includes("successfully")) {
+                        location.reload();
+                    }
+                    modal.style.display = 'none';
+                    hideLoading();
+                })
+                .catch(error => {
+                    alert("Error deleting student: " + error);
+                    modal.style.display = 'none';
+                    hideLoading();
+                });
+            };
+
+            document.getElementById('modal-no').onclick = function() {
+                modal.style.display = 'none';
+            };
+        }
+
+        // Export to Excel
+        function exportExcel() {
+            showLoading();
+            window.location.href = '/export_excel?class={{ class_name }}';
+            setTimeout(hideLoading, 1000);
+        }
+
+        // Update attendance every 5 seconds
+        setInterval(updateAttendance, 5000);
+        updateAttendance();
+    </script>
+</body>
+</html>

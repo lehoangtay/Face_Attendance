@@ -9,26 +9,22 @@ import os
 import shutil
 from os import listdir
 from os.path import join, isfile
+import face_recognition  # Sử dụng face_recognition
 
 app = Flask(__name__)
 
-# Biến toàn cục cho mô hình và nhãn
-recognizer = cv2.face.LBPHFaceRecognizer_create()
-label_dict = {}
+# Biến toàn cục để lưu trữ encoding của các sinh viên
+encoding_dict = {}
 
-# Load mô hình và nhãn khi khởi động
-def load_model():
-    global recognizer, label_dict
-    if os.path.exists("trained_model/trained_faces.yml"):
-        recognizer.read("trained_model/trained_faces.yml")
-    if os.path.exists("trained_model/labels.pkl"):
-        with open("trained_model/labels.pkl", "rb") as f:
-            label_dict = pickle.load(f)
-    print("Loaded label_dict:", label_dict)  # Debug khi khởi động
+# Load encoding khi khởi động
+def load_encodings():
+    global encoding_dict
+    if os.path.exists("trained_model/encodings.pkl"):
+        with open("trained_model/encodings.pkl", "rb") as f:
+            encoding_dict = pickle.load(f)
+    print("Loaded encoding_dict:", encoding_dict)  # Debug khi khởi động
 
-load_model()
-
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+load_encodings()
 
 # Khởi tạo database
 def init_db():
@@ -88,17 +84,18 @@ def collect_faces(class_name, student_id, student_name):
         if not ret:
             break
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        # Sử dụng face_recognition để phát hiện khuôn mặt
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        face_locations = face_recognition.face_locations(rgb_frame)
 
-        for (x, y, w, h) in faces:
-            if count < 200:
+        for (top, right, bottom, left) in face_locations:
+            if count < 50:  # Thu thập 50 ảnh
                 count += 1
-                face = gray[y:y+h, x:x+w]
+                face = frame[top:bottom, left:right]
                 file_name = f"{dataset_dir}/{count}.jpg"
                 cv2.imwrite(file_name, face)
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-                cv2.putText(frame, f"Collecting: {count}/200", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                cv2.putText(frame, f"Collecting: {count}/50", (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
             else:
                 cv2.putText(frame, "Collected!", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
@@ -107,59 +104,75 @@ def collect_faces(class_name, student_id, student_name):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
-        if count >= 200:
+        if count >= 50:  # Dừng khi đủ 50 ảnh
             break
 
     cap.release()
 
-# Huấn luyện mô hình
+# Huấn luyện mô hình (tạo encoding bằng face_recognition)
 def train_model():
-    global recognizer, label_dict
+    global encoding_dict
     data_path = "dataset/"
     if not os.path.exists(data_path):
         return "The directory dataset/ does not exist!"
 
     try:
-        onlyfolders = [join(data_path, d, f) for d in listdir(data_path) 
-                       for f in listdir(join(data_path, d)) if not isfile(join(data_path, d, f))]
+        # Lấy danh sách thư mục con (mỗi thư mục là một lớp)
+        class_folders = [d for d in listdir(data_path) if not isfile(join(data_path, d))]
+        if not class_folders:
+            return "No classes found in dataset/!"
+
+        encoding_dict.clear()  # Reset encoding_dict
+
+        # Duyệt qua từng lớp
+        for class_folder in class_folders:
+            class_path = join(data_path, class_folder)
+            # Lấy danh sách thư mục sinh viên trong lớp
+            student_folders = [f for f in listdir(class_path) if not isfile(join(class_path, f))]
+            for student_folder in student_folders:
+                # Đường dẫn đầy đủ đến thư mục sinh viên
+                student_path = join(class_path, student_folder)
+                student_key = f"{class_folder}/{student_folder}"
+                print(f"Processing student: {student_key}")  # Debug
+
+                # Tính encoding cho sinh viên
+                encodings = []
+                for file in listdir(student_path):
+                    if file.endswith(".jpg"):
+                        image_path = join(student_path, file)
+                        image = face_recognition.load_image_file(image_path)
+                        face_encodings = face_recognition.face_encodings(image)
+                        if face_encodings:  # Đảm bảo tìm thấy khuôn mặt
+                            encodings.append(face_encodings[0])
+                        else:
+                            print(f"No face found in image {image_path}")  # Debug
+
+                if encodings:
+                    # Lưu encoding trung bình hoặc encoding đầu tiên
+                    encoding_dict[student_key] = encodings[0]  # Lấy encoding đầu tiên
+                    print(f"Encoding calculated for {student_key}")  # Debug
+                else:
+                    print(f"No valid encodings for {student_key}")  # Debug
+
     except Exception as e:
         return f"Error accessing dataset/: {str(e)}"
 
-    if not onlyfolders:
-        return "No data to train in dataset/!"
+    if not encoding_dict:
+        return "No valid encodings generated!"
 
-    training_data, labels = [], []
-    label_dict = {}  # Reset label_dict
-    current_id = 0
+    # Tạo thư mục trained_model nếu chưa tồn tại
+    if not os.path.exists("trained_model"):
+        os.makedirs("trained_model")
 
-    for folder in onlyfolders:
-        label = folder.split("dataset/")[1] 
-        if label not in label_dict.values():
-            label_dict[current_id] = label
-            current_id += 1
-        folder_path = folder
-        for file in listdir(folder_path):
-            if file.endswith(".jpg"):
-                image_path = join(folder_path, file)
-                image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-                if image is not None:
-                    training_data.append(image)
-                    labels.append(list(label_dict.keys())[list(label_dict.values()).index(label)])
-
-    if not training_data:
-        return "No valid images for training!"
-
+    # Lưu encoding_dict
     try:
-        labels = np.array(labels)
-        recognizer.train(training_data, labels)
-        recognizer.save("trained_model/trained_faces.yml")
-        with open("trained_model/labels.pkl", "wb") as f:
-            pickle.dump(label_dict, f)
-        print("Label dict after training:", label_dict)  # Debug
-        load_model()  # Tải lại mô hình ngay sau khi huấn luyện
+        with open("trained_model/encodings.pkl", "wb") as f:
+            pickle.dump(encoding_dict, f)
+        print("Encoding dict after training:", encoding_dict)  # Debug
+        load_encodings()  # Tải lại encoding ngay sau khi huấn luyện
         return "Training complete!"
     except Exception as e:
-        return f"Error while training the model: {str(e)}"
+        return f"Error while saving encodings: {str(e)}"
 
 # Video điểm danh
 def gen_frames(class_name):
@@ -174,40 +187,53 @@ def gen_frames(class_name):
             print("Failed to read frame from webcam")  # Debug
             break
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+        # Chuyển đổi khung hình sang RGB để sử dụng với face_recognition
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        face_locations = face_recognition.face_locations(rgb_frame)
+        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-        for (x, y, w, h) in faces:
-            face = gray[y:y+h, x:x+w]
-            label, confidence = recognizer.predict(face)
-            print(f"Predicted label: {label}, Confidence: {confidence}, Label dict: {label_dict}")  # Debug
-            if confidence < 100 and label in label_dict:
-                # Tách student_info tương thích với cả "/" và "\"
-                student_info = label_dict[label].replace("\\", "/").split("/", 1)[1]  # Chuyển \ thành / rồi tách
-                student_id, student_name = student_info.split("_", 1)
-                print(f"Recognized: {student_id}_{student_name} in class {class_name}")  # Debug
+        for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+            # Tính khoảng cách đến tất cả encoding đã lưu
+            distances = face_recognition.face_distance(list(encoding_dict.values()), face_encoding)
+            tolerance = 0.55  # Giảm tolerance để tăng độ chính xác (chỉ nhận diện khi rất giống)
+
+            # Tìm khoảng cách nhỏ nhất và kiểm tra xem có nằm trong ngưỡng không
+            min_distance = float('inf')
+            best_match_index = -1
+            for i, distance in enumerate(distances):
+                if distance < min_distance and distance <= tolerance:
+                    min_distance = distance
+                    best_match_index = i
+
+            if best_match_index != -1:
+                student_key = list(encoding_dict.keys())[best_match_index]
+                class_folder, student_folder = student_key.split("/", 1)
+                student_id, student_name = student_folder.split("_", 1)
+                print(f"Recognized: {student_id}_{student_name} in class {class_name}, Distance: {min_distance:.2f}")  # Debug
                 
-                if not is_student_in_class(student_id, student_name, class_name):
-                    text = "Warning"
+                if class_folder != class_name or not is_student_in_class(student_id, student_name, class_name):
+                    text = "Warning: Student not in this class!"
                     color = (0, 0, 255)
                 elif check_attendance_today(student_id, class_name):
                     text = f"{student_name} - Attended"
                     color = (0, 255, 255)
                 else:
-                    text = f"{student_name} ({confidence:.2f})"
+                    text = f"{student_name} (Distance: {min_distance:.2f})"
                     color = (0, 255, 0)
+                    # Ghi nhận điểm danh
                     conn = sqlite3.connect("attendance.db")
                     c = conn.cursor()
                     c.execute("INSERT INTO attendance (student_id, student_name, class_name, timestamp) VALUES (?, ?, ?, ?)",
                               (student_id, student_name, class_name, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                     conn.commit()
                     conn.close()
+                    print(f"Attendance recorded for {student_name} in class {class_name}")  # Debug
             else:
-                text = "Unknown" if confidence >= 100 else "Invalid label"
+                text = "Unknown"
                 color = (0, 0, 255)
 
-            cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
-            cv2.putText(frame, text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+            cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
+            cv2.putText(frame, text, (left, top-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
 
         ret, buffer = cv2.imencode('.jpg', frame)
         if not ret:
@@ -315,4 +341,4 @@ def delete_student():
         return jsonify({"message": f"Error deleting student: {str(e)} / Lỗi khi xóa sinh viên: {str(e)}"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
